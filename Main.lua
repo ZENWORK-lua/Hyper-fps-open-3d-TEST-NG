@@ -265,106 +265,72 @@ local function waitUnpaused(duration)
     end
 end
 
--- SİNEMATİK AKIŞ
+-- [[ MASKOT AKIŞI VE PLATOBOOST KONTROL MEKANİZMASI ]] --
 task.spawn(function()
     waitUnpaused(0.5)
 
+    -- 1. KONTROL: Platoboost kodları silinmiş mi veya kurcalanmış mı?
+    local isPlatoboostLoaded = (type(Platoboost) == "table" or type(Platoboost) == "userdata") and (Platoboost.verify or Platoboost.get_key)
+
+    if not isPlatoboostLoaded then
+        -- Platoboost silindiyse veya bypass edildiyse Maskot dalga geçer:
+        while _G.HyperPause do task.wait(0.1) end
+        pcall(function() Chat:Chat(head, "hi, you tought that would work huh?", Enum.ChatColor.White) end)
+        triggerSmoothBounce()
+        waitUnpaused(1.3)
+
+        while _G.HyperPause do task.wait(0.1) end
+        pcall(function() Chat:Chat(head, "just get the key it takes like 2 minutes ._.", Enum.ChatColor.White) end)
+        triggerSmoothBounce()
+        waitUnpaused(2.5)
+
+        -- Hyper FPS'ye AÇILMA SİNYALİ VERİLMEZ ve maskot kaybolur!
+        isFollowing = false
+        if followConn then followConn:Disconnect() end
+        for _, p in ipairs(petModel:GetDescendants()) do
+            if p:IsA("BasePart") then TweenService:Create(p, TweenInfo.new(0.5), {Transparency = 1}):Play() end
+        end
+        task.wait(0.5)
+        petModel:Destroy()
+        return -- Kod burada tamamen biter, Hyper FPS ASLA açılmaz!
+    end
+
+    -- 2. NORMAL AKIŞ: Platoboost sağlamsa maskot konuşmaya başlar
     while _G.HyperPause do task.wait(0.1) end
     pcall(function() Chat:Chat(head, "hi, thank you for trying Hyper|FPS", Enum.ChatColor.White) end)
     triggerSmoothBounce()
     waitUnpaused(2.2)
 
     while _G.HyperPause do task.wait(0.1) end
-    pcall(function() Chat:Chat(head, "i will need you to click anywhere on your screen now", Enum.ChatColor.White) end)
+    pcall(function() Chat:Chat(head, "it looks like hyper|fps requires key now", Enum.ChatColor.White) end)
+    triggerSmoothBounce()
+    waitUnpaused(1.3)
+
+    while _G.HyperPause do task.wait(0.1) end
+    pcall(function() Chat:Chat(head, "it only takes 2 minutes to get the key so it shoudl worth trying right? :D", Enum.ChatColor.White) end)
     triggerSmoothBounce()
     waitUnpaused(1.2)
 
-    while _G.HyperPause do task.wait(0.1) end
-
-    -- DOKUNMA EKRANI
-    local pGui = localPlayer:WaitForChild("PlayerGui")
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "HyperDynamicGui"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = pGui
-
-    local overlay = Instance.new("TextButton")
-    overlay.Size = UDim2.new(2, 0, 2, 0)
-    overlay.Position = UDim2.new(-0.5, 0, -0.5, 0)
-    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    overlay.BackgroundTransparency = 1
-    overlay.Text = ""
-    overlay.Parent = screenGui
-
-    local clickText = Instance.new("TextLabel")
-    clickText.Size = UDim2.new(0.6, 0, 0, 50)
-    clickText.Position = UDim2.new(0.2, 0, 0.65, 0)
-    clickText.BackgroundTransparency = 1
-    clickText.Font = Enum.Font.GothamBold
-    clickText.Text = "click anywhere on your screen"
-    clickText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    clickText.TextSize = 18
-    clickText.TextTransparency = 1
-    clickText.Parent = overlay
-
-    TweenService:Create(overlay, TweenInfo.new(0.6), {BackgroundTransparency = 0.5}):Play()
-    TweenService:Create(clickText, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-
-    local canClick = true
-    local pressStartTime = 0
-    local startPressPos = Vector2.new()
-
-    overlay.InputBegan:Connect(function(input)
-        if not canClick then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            pressStartTime = os.clock()
-            startPressPos = Vector2.new(input.Position.X, input.Position.Y)
-        end
+    -- 3. PLATOBOOST KEY MENÜSÜ EKRANA GELİR
+    -- Maskot tam konuşmasını bitirdiği an Platoboost'un kendi orijinal menüsü belirir:
+    local keyVerified = false
+    pcall(function()
+        -- Eğer oyuncunun 24 saatlik geçerli key'i varsa menü hiç darlamadan onay verir, yoksa menü açılır
+        keyVerified = Platoboost:verify() -- veya Platoboost:get_key()
     end)
 
-    overlay.Activated:Connect(function(inputObject)
-        if not canClick then return end
-        
-        local pressDuration = os.clock() - pressStartTime
-        local currentClickPos = inputObject and inputObject.Position or UserInputService:GetMouseLocation()
-        local dragDistance = (Vector2.new(currentClickPos.X, currentClickPos.Y) - startPressPos).Magnitude
-
-        if pressStartTime > 0 and (pressDuration > 0.4 or dragDistance > 30) then
-            pressStartTime = 0
-            return
-        end
-
-        canClick = false
-        overlay:Destroy()
-
-        -- [[ ANA HYPER|FPS SCRİPTİNE TETİK SİNYALİ VERİLDİ ]]
+    -- 4. SİNYAL VE ONAY
+    if keyVerified then
+        -- Key doğru girildiyse Hyper FPS'ye çalışması için yeşil ışık yakılır:
         _G.HyperMainStart = true
+    end
 
-        pcall(function() Chat:Chat(head, "enjoy using the script!", Enum.ChatColor.White) end)
-        triggerSmoothBounce()
-        _G.HyperMainStart = true 
-        -- MASKOTU YUMUŞAKÇA SİLME
-        task.wait(1.5)
-        isFollowing = false
-        if followConn then followConn:Disconnect() end
-        
-        for _, p in ipairs(petModel:GetDescendants()) do
-            if p:IsA("BasePart") then
-                TweenService:Create(p, TweenInfo.new(0.5), {Transparency = 1}):Play()
-            end
-        end
-        task.wait(0.5)
-        petModel:Destroy()
-        
-        _G.HyperPetActive = nil
-        _G.HyperPetHead = nil
-        _G.HyperPetModel = nil
-        _G.TriggerBounceFunc = nil
-        _G.SetRedHornsFunc = nil
-        _G.SetBloodEyesFunc = nil
-        _G.HyperExecuteCount = nil
-        _G.HyperInCooldown = nil
-        _G.HyperPause = nil
-    end)
+    -- Maskot görevini tamamlayıp yumuşakça kaybolur
+    isFollowing = false
+    if followConn then followConn:Disconnect() end
+    for _, p in ipairs(petModel:GetDescendants()) do
+        if p:IsA("BasePart") then TweenService:Create(p, TweenInfo.new(0.5), {Transparency = 1}):Play() end
+    end
+    task.wait(0.5)
+    petModel:Destroy()
 end)
-
