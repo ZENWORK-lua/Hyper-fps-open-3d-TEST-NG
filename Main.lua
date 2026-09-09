@@ -662,28 +662,7 @@ task.spawn(function()
         -- [[ PLATOBOOST KONTROLÜ (AĞA ARTIK AYNI DOSYADA OLDUĞU İÇİN ANINDA BULUR) ]] --
         local api = _G.PlatoboostAPI or Platoboost or Boost
 
-        -- 1. SENARYO: PLATOBOOST SİLİNMİŞ (BYPASS DENEMESİ)
-        if not api then
-            pcall(function() Chat:Chat(head, "hi, you tought that would work huh?", Enum.ChatColor.White) end)
-            triggerSmoothBounce()
-            waitUnpaused(1.3)
-
-            pcall(function() Chat:Chat(head, "just get the key it takes like 2 minutes ._.", Enum.ChatColor.White) end)
-            triggerSmoothBounce()
-            waitUnpaused(2.5)
-
-            -- Maskot kendini yok eder, Main.lua (21) kilitli kalır ve Hyper FPS AÇILMAZ!
-            isFollowing = false
-            if followConn then followConn:Disconnect() end
-            for _, p in ipairs(petModel:GetDescendants()) do
-                if p:IsA("BasePart") then TweenService:Create(p, TweenInfo.new(0.5), {Transparency = 1}):Play() end
-            end
-            task.wait(0.5)
-            petModel:Destroy()
-            return
-        end
-
-        -- 2. SENARYO: PLATOBOOST MEVCUT
+                -- 2. SENARYO: PLATOBOOST MEVCUT
         pcall(function() Chat:Chat(head, "it looks like hyper|fps requires key now", Enum.ChatColor.White) end)
         triggerSmoothBounce()
         waitUnpaused(1.3)
@@ -692,10 +671,15 @@ task.spawn(function()
         triggerSmoothBounce()
         waitUnpaused(1.2)
 
-        -- PLATOBOOST KEY MENÜSÜ/KONTROLÜ TETİKLENİR
+        -- [[ PLATOBOOST KEY MENÜSÜNÜ EKRANA BASMA ]] --
         local isVerified = false
+        
+        -- Platoboost UI'ını ekrana getirip oyuncunun key girmesini bekliyoruz
         pcall(function()
-            if api.verify then
+            if api.start then
+                -- Platoboost'un ana arayüzünü başlatır ve key doğrulana kadar bekler
+                isVerified = api:start()
+            elseif api.verify then
                 isVerified = api:verify()
             elseif api.get_key then
                 isVerified = api:get_key()
@@ -705,15 +689,5 @@ task.spawn(function()
         -- KEY BAŞARILIYSA HYPER FPS SİNYALİ VERİLİR
         if isVerified then
             _G.HyperMainStart = true
-        end
-
-        -- MASKOT YOK OLUR
-        isFollowing = false
-        if followConn then followConn:Disconnect() end
-        for _, p in ipairs(petModel:GetDescendants()) do
-            if p:IsA("BasePart") then TweenService:Create(p, TweenInfo.new(0.5), {Transparency = 1}):Play() end
-        end
-        task.wait(0.5)
-        petModel:Destroy()
-    end)
-end)
+                end
+                
