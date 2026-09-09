@@ -269,11 +269,10 @@ end
 task.spawn(function()
     waitUnpaused(0.5)
 
-    -- 1. KONTROL: Platoboost kodları silinmiş mi veya kurcalanmış mı?
-    local isPlatoboostLoaded = (type(Platoboost) == "table" or type(Platoboost) == "userdata") and (Platoboost.verify or Platoboost.get_key)
+    local api = getgenv().PlatoboostAPI or Platoboost or _G.Platoboost
 
-    if not isPlatoboostLoaded then
-        -- Platoboost silindiyse veya bypass edildiyse Maskot dalga geçer:
+    -- 1. KONTROL: Platoboost kodları var mı?
+    if not api then
         while _G.HyperPause do task.wait(0.1) end
         pcall(function() Chat:Chat(head, "hi, you tought that would work huh?", Enum.ChatColor.White) end)
         triggerSmoothBounce()
@@ -284,7 +283,7 @@ task.spawn(function()
         triggerSmoothBounce()
         waitUnpaused(2.5)
 
-        -- Hyper FPS'ye AÇILMA SİNYALİ VERİLMEZ ve maskot kaybolur!
+        -- Maskot imha olur, Hyper FPS ASLA açılmaz!
         isFollowing = false
         if followConn then followConn:Disconnect() end
         for _, p in ipairs(petModel:GetDescendants()) do
@@ -292,10 +291,10 @@ task.spawn(function()
         end
         task.wait(0.5)
         petModel:Destroy()
-        return -- Kod burada tamamen biter, Hyper FPS ASLA açılmaz!
+        return
     end
 
-    -- 2. NORMAL AKIŞ: Platoboost sağlamsa maskot konuşmaya başlar
+    -- 2. NORMAL AKIŞ: Maskot diyalogları söyler
     while _G.HyperPause do task.wait(0.1) end
     pcall(function() Chat:Chat(head, "hi, thank you for trying Hyper|FPS", Enum.ChatColor.White) end)
     triggerSmoothBounce()
@@ -311,21 +310,23 @@ task.spawn(function()
     triggerSmoothBounce()
     waitUnpaused(1.2)
 
-    -- 3. PLATOBOOST KEY MENÜSÜ EKRANA GELİR
-    -- Maskot tam konuşmasını bitirdiği an Platoboost'un kendi orijinal menüsü belirir:
-    local keyVerified = false
-    pcall(function()
-        -- Eğer oyuncunun 24 saatlik geçerli key'i varsa menü hiç darlamadan onay verir, yoksa menü açılır
-        keyVerified = Platoboost:verify() -- veya Platoboost:get_key()
+    -- 3. PLATOBOOST KEY SORGUSU & ARAYÜZÜ (Thread İçinde)
+    task.spawn(function()
+        local verified = false
+        pcall(function()
+            if api.verify then
+                verified = api:verify()
+            elseif api.get_key then
+                verified = api:get_key()
+            end
+        end)
+
+        if verified then
+            _G.HyperMainStart = true
+        end
     end)
 
-    -- 4. SİNYAL VE ONAY
-    if keyVerified then
-        -- Key doğru girildiyse Hyper FPS'ye çalışması için yeşil ışık yakılır:
-        _G.HyperMainStart = true
-    end
-
-    -- Maskot görevini tamamlayıp yumuşakça kaybolur
+    -- Maskot görevini tamamlar ve kaybolur
     isFollowing = false
     if followConn then followConn:Disconnect() end
     for _, p in ipairs(petModel:GetDescendants()) do
@@ -334,3 +335,5 @@ task.spawn(function()
     task.wait(0.5)
     petModel:Destroy()
 end)
+
+    
